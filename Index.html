@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kantin Pintar - Budget & Preferensi</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}
+  body{background:#dbeafe;min-height:100vh;padding:20px;display:flex;justify-content:center}
+  .card{background:#fff;width:100%;max-width:540px;padding:26px 22px;border-radius:24px;border:3px solid #2563eb;box-shadow:0 15px 35px rgba(37,99,235,.25);height:fit-content}
+  h1{color:#1e40af;text-align:center;font-size:25px}
+  p.sub{text-align:center;color:#64748b;margin:8px 0 18px;font-size:14px}
+  label{font-weight:800;color:#1e40af;display:block;margin-top:16px;margin-bottom:6px;font-size:14px}
+  input[type=number]{width:100%;padding:13px;border:2px solid #bfdbfe;border-radius:12px;font-size:17px;font-weight:700;outline:none;background:#eff6ff;color:#1e40af}
+  input[type=range]{width:100%;accent-color:#2563eb}
+  .budget-info{display:flex;justify-content:space-between;font-size:13px;color:#64748b;font-weight:700;margin-top:4px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chips button{padding:9px 15px;border-radius:999px;border:2px solid #bfdbfe;background:#eff6ff;color:#1e40af;font-weight:700;cursor:pointer;font-size:13px}
+  .chips button.active{background:#2563eb;color:#fff;border-color:#2563eb}
+  select{width:100%;padding:12px;border:2px solid #bfdbfe;border-radius:12px;font-size:15px;background:#eff6ff;outline:none}
+  #btnCari{width:100%;margin-top:20px;padding:15px;border:none;border-radius:14px;background:#2563eb;color:#fff;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 5px 0 #1e3a8a}
+  #btnCari:active{transform:translateY(3px);box-shadow:0 2px 0 #1e3a8a}
+  #hasil{margin-top:20px}
+  .item{background:#eff6ff;border:2px solid #bfdbfe;border-radius:16px;padding:14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;animation:pop .3s ease}
+  @keyframes pop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+  .item b{color:#1e40af;font-size:15px}
+  .item span{font-size:12px;color:#64748b}
+  .harga{background:#2563eb;color:#fff;padding:7px 12px;border-radius:999px;font-weight:800;font-size:14px;white-space:nowrap}
+  .badge{background:#dcfce7;color:#166534;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800}
+  .footer{text-align:center;font-size:11px;color:#94a3b8;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div style="text-align:center;font-size:55px">🍔🍟🥤</div>
+  <h1>Kantin Pintar Resky</h1>
+  <p class="sub">Pilih budget & seleramu, biar kami pilihkan menu yang paling pas!</p>
+
+  <label>💰 1. BUDGET KAMU</label>
+  <input type="number" id="budget" value="10000" oninput="syncSlider(this.value)" placeholder="Contoh: 10000">
+  <input type="range" id="slider" min="3000" max="25000" step="1000" value="10000" oninput="syncInput(this.value)">
+  <div class="budget-info"><span>Rp 3.000</span><span id="budgetLabel">Rp 10.000</span><span>Rp 25.000</span></div>
+
+  <label>😋 2. PREFERENSI / SELERA KAMU</label>
+  <div class="chips" id="chipsPref">
+    <button class="active" onclick="pilihPref(this,'semua')">Semua 🍽️</button>
+    <button onclick="pilihPref(this,'kenyang')">Bikin Kenyang 🍚</button>
+    <button onclick="pilihPref(this,'pedas')">Pedas 🌶️</button>
+    <button onclick="pilihPref(this,'manis')">Manis 🍰</button>
+    <button onclick="pilihPref(this,'sehat')">Sehat 🥗</button>
+    <button onclick="pilihPref(this,'segar')">Segar 🥤</button>
+  </div>
+
+  <label>🍜 3. KATEGORI</label>
+  <select id="kategori" onchange="cariMenu()">
+    <option value="semua">Semua Kategori</option>
+    <option value="makanan">Makanan Berat</option>
+    <option value="cemilan">Cemilan</option>
+    <option value="minuman">Minuman</option>
+  </select>
+
+  <button id="btnCari" onclick="cariMenu()">🔍 CARI REKOMENDASI</button>
+
+  <div id="hasil"></div>
+  <div class="footer">Tugas Informatika | Upload ke Github Pages</div>
+</div>
+
+<script>
+  // === DATA MENU KANTIN - Ganti sesuai kantin sekolahmu ===
+  const menus = [
+    {nama:"Nasi Goreng Spesial", harga:10000, kategori:"makanan", pref:"kenyang", emoji:"🍛", desc:"Porsi besar, bikin kenyang"},
+    {nama:"Mie Goreng Pedas", harga:8000, kategori:"makanan", pref:"pedas", emoji:"🍜", desc:"Pedas nampol"},
+    {nama:"Ayam Geprek + Nasi", harga:12000, kategori:"makanan", pref:"pedas", emoji:"🍗", desc:"Crispy + sambal pedas"},
+    {nama:"Nasi Kuning", harga:7000, kategori:"makanan", pref:"kenyang", emoji:"🍚", desc:"Murah, enak, kenyang"},
+    {nama:"Bakso Kuah", harga:9000, kategori:"makanan", pref:"kenyang", emoji:"🍲", desc:"Kuah hangat, segar"},
+    {nama:"Risol Mayo", harga:3000, kategori:"cemilan", pref:"manis", emoji:"🥐", desc:"Creamy, gurih manis"},
+    {nama:"Donat Coklat", harga:5000, kategori:"cemilan", pref:"manis", emoji:"🍩", desc:"Manis, lembut"},
+    {nama:"Pisang Goreng", harga:5000, kategori:"cemilan", pref:"manis", emoji:"🍌", desc:"Hangat, manis"},
+    {nama:"Salad Buah", harga:8000, kategori:"cemilan", pref:"sehat", emoji:"🥗", desc:"Sehat, segar"},
+    {nama:"Es Teh Manis", harga:3000, kategori:"minuman", pref:"segar", emoji:"🧋", desc:"Segar dingin"},
+    {nama:"Es Jeruk", harga:5000, kategori:"minuman", pref:"segar", emoji:"🍊", desc:"Vitamin C"},
+    {nama:"Jus Alpukat", harga:10000, kategori:"minuman", pref:"sehat", emoji:"🥑", desc:"Sehat, creamy"},
+  ];
+
+  let prefDipilih = 'semua';
+
+  function pilihPref(btn, nilai){
+    prefDipilih = nilai;
+    document.querySelectorAll('#chipsPref button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    cariMenu();
+  }
+
+  function formatRp(n){ return 'Rp ' + n.toLocaleString('id-ID'); }
+
+  function syncSlider(val){
+    document.getElementById('slider').value = val;
+    document.getElementById('budgetLabel').innerText = formatRp(parseInt(val)||0);
+  }
+  function syncInput(val){
+    document.getElementById('budget').value = val;
+    document.getElementById('budgetLabel').innerText = formatRp(parseInt(val)||0);
+    cariMenu();
+  }
+
+  function cariMenu(){
+    const budget = parseInt(document.getElementById('budget').value) || 0;
+    const kategori = document.getElementById('kategori').value;
+    const hasilDiv = document.getElementById('hasil');
+
+    // LOGIKA 1: Filter berdasarkan BUDGET (harga <= budget)
+    // LOGIKA 2: Filter berdasarkan PREFERENSI
+    // LOGIKA 3: Filter berdasarkan KATEGORI
+    let hasil = menus.filter(m => {
+      if(m.harga > budget) return false;
+      if(prefDipilih !== 'semua' && m.pref !== prefDipilih) return false;
+      if(kategori !== 'semua' && m.kategori !== kategori) return false;
+      return true;
+    });
+
+    // Urutkan: yang harganya paling mendekati budget di atas (paling worth it)
+    hasil.sort((a,b) => b.harga - a.harga);
+
+    if(hasil.length === 0){
+      hasilDiv.innerHTML = `<p style="text-align:center;color:#ef4444;font-weight:700;padding:14px">😢 Tidak ada menu yang cocok.<br>Coba naikkan budget atau pilih Preferensi "Semua".</p>`;
+      return;
+    }
+
+    let html = `<b style="color:#1e40af">✅ Ketemu ${hasil.length} menu untuk budget ${formatRp(budget)}:</b><br><br>`;
+    hasil.forEach((m,i)=>{
+      let sisa = budget - m.harga;
+      html += `
+        <div class="item">
+          <div>
+            <b>${m.emoji} ${m.nama}</b> ${i===0?'<span class="badge">⭐ PALING COCOK</span>':''}<br>
+            <span>${m.desc} • Sisa: ${formatRp(sisa)}</span>
+          </div>
+          <div class="harga">${formatRp(m.harga)}</div>
+        </div>
+      `;
+    });
+    hasilDiv.innerHTML = html;
+  }
+
+  cariMenu();
+</script>
+</body>
+      </html>
